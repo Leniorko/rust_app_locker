@@ -1,52 +1,36 @@
-use sysinfo::{NetworkExt, ProcessExt, System, SystemExt};
+mod system_data;
+
+use std::cell::Cell;
+use gtk::prelude::*;
+use gtk::{Application, ApplicationWindow, Button};
+use std::rc::Rc;
 
 fn main() {
-    // Please note that we use "new_all" to ensure that all list of
-// components, network interfaces, disks and users are already
-// filled!
-    let mut sys = System::new_all();
+ let app = Application::builder().application_id("com.leniorko").build();
+    app.connect_activate(build_ui);
 
-// First we update all information of our `System` struct.
-    sys.refresh_all();
+    app.run();
+}
 
-// We display all disks' information:
-    println!("=> disks:");
-    for disk in sys.disks() {
-        println!("{:?}", disk);
-    }
+fn build_ui(app: &Application){
+    let window = ApplicationWindow::builder().application(app).title("My GTK app").build();
 
-// Network interfaces name, data received and data transmitted:
-    println!("=> networks:");
-    for (interface_name, data) in sys.networks() {
-        println!("{}: {}/{} B", interface_name, data.received(), data.transmitted());
-    }
+    let  click_counter = Rc::new(Cell::new(0));
 
-// Components temperature:
-    println!("=> components:");
-    for component in sys.components() {
-        println!("{:?}", component);
-    }
+    let button = Button::builder().label("Press me!")
+        .margin_top(12)
+        .margin_bottom(12)
+        .margin_end(12)
+        .margin_start(12)
+        .build();
 
-    println!("=> system:");
-// RAM and swap information:
-    println!("total memory: {} KB", sys.total_memory());
-    println!("used memory : {} KB", sys.used_memory());
-    println!("total swap  : {} KB", sys.total_swap());
-    println!("used swap   : {} KB", sys.used_swap());
+    button.connect_clicked(move |button|{
+        &click_counter.set(&click_counter.get() + 1);
+        let new_label = &click_counter.get().to_string();
+        button.set_label(&*new_label);
+    });
 
-// Display system information:
-    println!("System name:             {:?}", sys.name());
-    println!("System kernel version:   {:?}", sys.kernel_version());
-    println!("System OS version:       {:?}", sys.os_version());
-    println!("System host name:        {:?}", sys.host_name());
+    window.set_child(Some(&button));
 
-// Number of processors:
-    println!("NB processors: {}", sys.processors().len());
-
-// Display processes ID, name na disk usage:
-    for (pid, process) in sys.processes() {
-        if process.name().eq("vivaldi-bin") {
-            println!("[{}] {} {:?}", pid, process.name(), process.disk_usage());
-        }
-    }
+    window.present();
 }
